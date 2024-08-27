@@ -1,6 +1,7 @@
 //AutoWaterChange Arduino 2 - Downstairs Arduino
 #include <EEPROM.h>
 #include <GravityTDS.h>
+#include <avr/wdt.h>
 
 
 GravityTDS gravityTds;
@@ -8,16 +9,17 @@ GravityTDS gravityTds;
 #define TdsSensorPin A1
 #define PressureSensor_Pin A0
 
-const int RODI_TDS_Limit = 2; //limit for RODI TDS OK
-const int Pressure_Limit = 40;//limit for RODI to be ON matches RODI PUMP Pressure Switch @ 40PSI
+const int RODI_TDS_Limit = 10; //limit for RODI TDS OK
+const int Pressure_Limit = 25;//pressure to trigger RODI system on
+
 
 const int OKVlv_Pin = 7;
 const int NOKVlv_Pin = 6;
 const int FillVlv_Pin = 5;
 const int CircVlv_Pin = 4;
-//const int PressureSwitch_Pin = 2;
 const int FillCMD_Pin = 8;
 const int PumpRly_Pin = 9;
+const int RODIPump_CMD_Pin = 10;
 const int Button_Pin = 13;
 const int Button_LED_Pin = 11;
 
@@ -56,6 +58,7 @@ State_RODISys State_RODI;
 
 void setup() 
 {
+    wdt_enable(WDTO_8S); //enables watchdogtimer with 8s countdown - if timer doesn't hit 8s (program is frozen) Arduino will reset
 
     Serial.begin(115200);
 
@@ -75,15 +78,18 @@ void setup()
     pinMode(PumpRly_Pin, OUTPUT);
     pinMode(Button_Pin, INPUT_PULLUP);
     pinMode(Button_LED_Pin, OUTPUT);
+    pinMode(RODIPump_CMD_Pin, OUTPUT);
 }
 
 void loop()
 {  
+  wdt_reset(); //resets watchdog timer before it resets arduino
+
   delay(1000); //slow the chaos 
-  RODI();
-  TDS_Measurement();
-  Reservoir();
-  Button();
+  RODI(); //RODI loop
+  TDS_Measurement(); //TDS loop
+  Reservoir(); //Reservoir loop
+  Button(); //Button loop
   Serial.println(" END");
 }
 
@@ -122,6 +128,7 @@ void RODI()
   Serial.print("PSI||");
   
   
+
   if (Pressure >= Pressure_Limit)
   {
     //if Pressure is greater than Pressure Limit system should idle
@@ -161,18 +168,21 @@ void RODI()
     {
       digitalWrite (OKVlv_Pin, LOW);
       digitalWrite (NOKVlv_Pin, LOW);
+      digitalWrite (RODIPump_CMD_Pin, LOW);
       break;
     }
     case RODI_OK: //what to do when RODI is OK
     {
       digitalWrite (OKVlv_Pin, HIGH);
       digitalWrite (NOKVlv_Pin, LOW);
+      digitalWrite (RODIPump_CMD_Pin, HIGH);
       break;
     }
     case RODI_NOK:  //what to do when RODI is NOK
     {
       digitalWrite (OKVlv_Pin, LOW);
       digitalWrite (NOKVlv_Pin, HIGH);
+      digitalWrite (RODIPump_CMD_Pin, HIGH);
       break;
     }
   }
