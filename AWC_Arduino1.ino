@@ -1,4 +1,5 @@
 //AutoWaterChange Arduino #1
+#include <avr/wdt.h>
 
 const int Drain_Volume = 13; //define AWC Volume
 
@@ -49,6 +50,8 @@ AWC_state AWC_State;
 
 void setup() 
 {
+  wdt_enable(WDTO_8S); //enables watchdog timer with 8s countdown
+
   Serial.begin(115200);
 
   pinMode(DrainVlv_Pin, OUTPUT);
@@ -61,6 +64,8 @@ void setup()
 
 void loop() 
 {
+  wdt_reset(); //resets watchdog timer before it resets arduino
+  
   delay(1000);
   AWC();
   Button();
