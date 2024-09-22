@@ -10,7 +10,8 @@ GravityTDS gravityTds;
 #define PressureSensor_Pin A0
 
 const int RODI_TDS_Limit = 10; //limit for RODI TDS OK
-const int Pressure_Limit = 25;//pressure to trigger RODI system on
+const int Pressure_Limit_High = 60;//pressure to trigger RODI system off
+const int Pressure_Limit_Low = 10; //pressure to trigger RODI system on
 
 
 const int OKVlv_Pin = 7;
@@ -129,13 +130,13 @@ void RODI()
   
   
 
-  if (Pressure >= Pressure_Limit)
+  if (Pressure >= Pressure_Limit_High)
   {
     //if Pressure is greater than Pressure Limit system should idle
     PressureSwitch_State = LOW;
 //    Serial.print("Pressure_High_IDLE||"); //debug Pressure Switch State
   }
-  if (Pressure < Pressure_Limit)
+  if (Pressure < Pressure_Limit_Low)
   {
     //if pressure is less than Pressure Limit system should function
     PressureSwitch_State = HIGH;
